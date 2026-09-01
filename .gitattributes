@@ -1,0 +1,12 @@
+# Normalise to LF in the repository; check out native on each platform.
+* text=auto
+
+# Batch files must keep CRLF or cmd.exe mis-parses multi-line blocks.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Shell scripts must keep LF even when checked out on Windows.
+*.sh text eol=lf
+
+# The bake cache format is binary.
+*.tlp binary
