@@ -1,0 +1,57 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "timeleap-player"
+dynamic = ["version"]
+description = "Play video using real Windows windows as pixels."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Olexify" }]
+keywords = ["video", "windows", "win32", "bad-apple", "desktop", "player"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Win32 (MS Windows)",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: Microsoft :: Windows",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Multimedia :: Video :: Display",
+]
+dependencies = [
+    "numpy>=1.24",
+    "pillow>=9",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/Olexify/TimeLeapPlayer"
+Repository = "https://github.com/Olexify/TimeLeapPlayer"
+Issues = "https://github.com/Olexify/TimeLeapPlayer/issues"
+
+[project.scripts]
+timeleap = "timeleap.cli:main"
+
+[tool.setuptools.dynamic]
+version = {attr = "timeleap.__version__"}
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["timeleap*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

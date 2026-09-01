@@ -1,0 +1,63 @@
+# Byte-compiled / cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.cache/
+
+# Build artefacts
+build/
+dist/
+sdist/
+wheels/
+*.egg-info/
+*.egg
+.eggs/
+pip-wheel-metadata/
+MANIFEST
+
+# PyInstaller
+*.spec
+*.manifest
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+.python-version
+
+# Editors / IDEs
+.idea/
+.vscode/
+*.swp
+*~
+
+# Coverage / tooling output
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+.tox/
+.nox/
+
+# TimeLeapPlayer bake cache (settings live in %LOCALAPPDATA%, not here)
+*.tlp
+*.tlp.tmp*
+
+# OS noise
+Thumbs.db
+ehthumbs.db
+desktop.ini
+.DS_Store
+
+# Scratch media
+*.mp4
+*.mkv
+*.webm
+*.avi
+*.mov
+!assets/**
