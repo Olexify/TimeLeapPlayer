@@ -47,12 +47,19 @@ pip install -e .
 ## Run
 
 ```
-run.bat
+TimeLeapPlayer.bat
 ```
 
-`run.bat` opens the control panel, works from any directory, and pauses on
-error. Given arguments it forwards them, so `run.bat clip.mp4` and
-`run.bat info clip.mp4` both work. Equivalently, once installed:
+Double-click it, or point a desktop shortcut at it. It checks the environment,
+hands off to `pythonw.exe` and exits, so no console window sits behind the
+control panel. Given arguments it stays on the console instead, so
+`TimeLeapPlayer.bat info clip.mp4` still prints its output.
+
+`run.bat` does the same thing but keeps the console attached for the whole
+session — useful when you want to watch stdout. Both work from any directory
+and neither needs the package to be pip-installed.
+
+Equivalently, once installed:
 
 ```
 timeleap gui
