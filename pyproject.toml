@@ -48,6 +48,9 @@ version = {attr = "timeleap.__version__"}
 [tool.setuptools]
 package-dir = { "" = "src" }
 
+[tool.setuptools.package-data]
+timeleap = ["assets/*.ico"]
+
 [tool.setuptools.packages.find]
 where = ["src"]
 include = ["timeleap*"]

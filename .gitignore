@@ -48,6 +48,10 @@ coverage.xml
 *.tlp
 *.tlp.tmp*
 
+# Shortcuts bake in an absolute path, so they are per-machine.
+# `TimeLeap Player.lnk` is created locally, not shared.
+*.lnk
+
 # OS noise
 Thumbs.db
 ehthumbs.db

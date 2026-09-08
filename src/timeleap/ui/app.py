@@ -142,6 +142,7 @@ class TimeLeapApp(tk.Tk):
         self._page_parent: tk.Misc | None = None
 
         self.title("TimeLeapPlayer")
+        self._set_window_icon()
         self.minsize(900, 640)
         self.geometry(self._safe_geometry(self.ui_state.geometry, "1040x780"))
         self.style = widgets.apply_theme(self)
@@ -156,6 +157,21 @@ class TimeLeapApp(tk.Tk):
         self._tick()
         if initial:
             self.after(150, lambda: self.open_path(initial))
+
+    def _set_window_icon(self) -> None:
+        """Use the shipped icon for the title bar, taskbar and Alt-Tab.
+
+        A shortcut's icon only dresses the shortcut; without this the window
+        itself still shows Tk's default feather. Missing or unreadable is not
+        worth failing a launch over.
+        """
+        icon = Path(__file__).resolve().parent.parent / "assets" / "timeleap.ico"
+        if not icon.is_file():
+            return
+        try:
+            self.iconbitmap(default=str(icon))
+        except tk.TclError:
+            pass
 
     def run(self) -> None:
         self.mainloop()
