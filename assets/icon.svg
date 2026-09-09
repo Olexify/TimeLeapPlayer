@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="TimeLeapPlayer">
+  <title>TimeLeapPlayer</title>
+  <rect width="512" height="512" rx="102" fill="#14161b"/>
+  <rect x="4" y="4" width="504" height="504" rx="99" fill="none" stroke="#2c3442" stroke-width="8"/>
+  <rect x="153.6" y="112.6" width="33.6" height="34.8" rx="3" fill="#62c9ff"/>
+  <rect x="153.6" y="153.6" width="100.9" height="34.8" rx="3" fill="#8ed7ff"/>
+  <rect x="153.6" y="194.6" width="168.2" height="34.8" rx="3" fill="#bbe6ff"/>
+  <rect x="153.6" y="235.5" width="235.5" height="34.8" rx="3" fill="#e8f5ff"/>
+  <rect x="153.6" y="276.5" width="168.2" height="34.8" rx="3" fill="#bbe6ff"/>
+  <rect x="153.6" y="317.4" width="100.9" height="34.8" rx="3" fill="#8ed7ff"/>
+  <rect x="153.6" y="358.4" width="33.6" height="34.8" rx="3" fill="#62c9ff"/>
+</svg>

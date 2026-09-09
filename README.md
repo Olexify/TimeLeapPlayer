@@ -1,4 +1,9 @@
-# TimeLeapPlayer
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/logo-dark.png">
+    <img src="assets/logo-light.png" alt="TimeLeapPlayer" width="620">
+  </picture>
+</p>
 
 Play any video on your Windows desktop using **real OS windows as pixels**.
 Each frame is decoded to a small grey grid, thresholded, and decomposed into a
@@ -478,6 +483,23 @@ pytest
 ```
 
 ---
+
+## Brand assets
+
+`assets/` holds the mark in every form: `icon.svg`, `icon.ico`, PNGs from 16
+to 512 px, the light and dark README wordmarks, and the GitHub social card.
+`src/timeleap/assets/timeleap.ico` is the copy the app itself loads for its
+window, shipped inside the package.
+
+All of it is generated from one geometry definition:
+
+```
+python tools/make_brand.py
+```
+
+Editing that script and re-running it keeps the SVG, the bitmaps, the `.ico`
+and the social card from drifting apart.
+
 
 ## Credits
 
