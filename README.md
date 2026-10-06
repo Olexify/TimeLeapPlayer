@@ -140,6 +140,8 @@ multi-monitor setup where a screen sits left of or above the primary. From the
 command line the same thing is `--region X,Y,W,H`, and the position is saved
 with the rest of your settings.
 
+<img width="2021" height="1196" alt="image" src="https://github.com/user-attachments/assets/2c1f96a7-7e78-4efa-8d3e-6f1baa479790" />
+
 ### The CLI
 
 ```
