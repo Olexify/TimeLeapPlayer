@@ -5,7 +5,7 @@
   </picture>
 </p>
 
-<img width="2538" height="1382" alt="image" src="https://github.com/user-attachments/assets/6bff85d0-28d0-4ada-9c93-aa56c19414fa" />
+<img width="2174" height="1067" alt="image" src="https://github.com/user-attachments/assets/cdd592ff-134d-4987-a28b-5cbc0c5cf5c9" />
 
 Play any video on your Windows desktop using **real OS windows as pixels**.
 Each frame is decoded to a small grey grid, thresholded, and decomposed into a
