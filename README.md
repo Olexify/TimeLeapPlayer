@@ -5,6 +5,8 @@
   </picture>
 </p>
 
+<img width="2538" height="1382" alt="image" src="https://github.com/user-attachments/assets/6bff85d0-28d0-4ada-9c93-aa56c19414fa" />
+
 Play any video on your Windows desktop using **real OS windows as pixels**.
 Each frame is decoded to a small grey grid, thresholded, and decomposed into a
 few dozen rectangles; each rectangle becomes a pooled, top-most, click-through
@@ -499,6 +501,9 @@ python tools/make_brand.py
 
 Editing that script and re-running it keeps the SVG, the bitmaps, the `.ico`
 and the social card from drifting apart.
+
+
+<img width="1046" height="837" alt="image" src="https://github.com/user-attachments/assets/f619b80b-e697-45e7-8551-662ab6d41f82" />
 
 
 ## Credits
