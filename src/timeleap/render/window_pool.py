@@ -79,9 +79,10 @@ def ex_style_for(topmost: bool = True, click_through: bool = True,
     """Extended styles for a pixel window.
 
     TOOLWINDOW keeps it off the taskbar and out of Alt-Tab. NOACTIVATE stops
-    it stealing focus. TRANSPARENT removes it from hit-testing, so the desktop
-    underneath stays clickable -- without it, covering the screen in top-most
-    windows makes the machine unusable until playback ends.
+    it stealing focus. TRANSPARENT + LAYERED removes it from hit-testing, so
+    clicks fall through to whatever is underneath -- the player's input
+    surface, or the desktop. TRANSPARENT alone does not: verified with a real
+    click, a non-layered pixel window swallows it.
     """
     style = w.WS_EX_TOOLWINDOW
     if topmost:
@@ -89,7 +90,7 @@ def ex_style_for(topmost: bool = True, click_through: bool = True,
     if no_activate:
         style |= w.WS_EX_NOACTIVATE
     if click_through:
-        style |= w.WS_EX_TRANSPARENT
+        style |= w.WS_EX_TRANSPARENT | w.WS_EX_LAYERED
     return style
 
 
@@ -114,6 +115,8 @@ class Layer:
                 w.PARK_X, w.PARK_Y, 1, 1, None, None, hinst, None)
             if not hwnd:
                 break                      # out of desktop heap; use what we got
+            if self.ex_style & w.WS_EX_LAYERED:
+                w.make_layered(hwnd)
             self.hwnds.append(hwnd)
             self.rects.append(None)
         return len(self.hwnds)
@@ -192,6 +195,8 @@ class Blackout:
                 None, None, w.GetModuleHandleW(None), None)
             if not self.hwnd:
                 return
+            if ex_style & w.WS_EX_LAYERED:
+                w.make_layered(self.hwnd)
         w.SetWindowPos(self.hwnd, w.HWND_TOPMOST, x, y, width, height,
                        w.SWP_SHOWWINDOW | w.SWP_NOACTIVATE)
 

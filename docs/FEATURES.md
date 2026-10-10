@@ -246,7 +246,7 @@ a valueless flag, so nothing an option consumes can be mistaken for a command.
 | `bake` | Writes a `.tlp` with a throttled percent/rate/ETA progress line, then reports size, bytes per frame, mean boxes per frame and the ratio against the source. |
 | `info` | Probes the file and predicts the cost of playing it. |
 | `cache` | Lists the cache, prunes it to a byte budget (`500M`, `2G`), or clears it. |
-| `gui` | Launches the control panel, optionally pre-loading a file. |
+| `gui` | Launches the app, optionally pre-loading a file. |
 
 Two implementation choices are load-bearing rather than cosmetic:
 
@@ -278,7 +278,7 @@ Exit codes: `0` success, `1` error, `2` usage, `130` interrupted.
   failure is swallowed — settings are a convenience and must never be fatal.
 * Unknown keys in a config file are ignored, so a file written by an older
   build still loads.
-* A big always-reachable **STOP** in the UI plus the global panic hotkey are
+* A close button on the player window plus the global panic hotkey are
   mandatory: two hundred top-most windows can otherwise cover every route out.
 * `render.click_through` and `render.no_activate` mean the montage cannot trap
   your mouse or steal your keystrokes.

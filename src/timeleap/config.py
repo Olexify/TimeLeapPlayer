@@ -105,6 +105,7 @@ class RenderConfig:
     diff_frames: bool = True        # skip DeferWindowPos for unchanged slots
     stable_slots: bool = True       # temporal box->slot matching, kills jitter
     background_blackout: bool = False   # full-screen black window behind the show
+    fullscreen_all: bool = False    # fullscreen spans every monitor, not just one
 
 
 @dataclass
@@ -151,6 +152,7 @@ class AppConfig:
     use_cache: bool = True
     show_stats: bool = True
     panic_hotkey: bool = True
+    recent: list = field(default_factory=list)   # most recent first, paths
 
     # ---- persistence -------------------------------------------------
     @classmethod
@@ -177,7 +179,7 @@ class AppConfig:
                     if k == "region" and v is not None:
                         v = tuple(v)
                     setattr(obj, k, v)
-        for k in ("last_dir", "use_cache", "show_stats", "panic_hotkey"):
+        for k in ("last_dir", "use_cache", "show_stats", "panic_hotkey", "recent"):
             if k in raw:
                 setattr(cfg, k, raw[k])
         return cfg

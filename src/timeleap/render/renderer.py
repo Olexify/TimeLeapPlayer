@@ -68,16 +68,17 @@ class FrameRenderer:
         rebuilt = self.pool.configure(
             colors, topmost=cfg.topmost, click_through=cfg.click_through,
             no_activate=cfg.no_activate)
-        invalidated = (rebuilt or target != self._target
-                       or (grid_w, grid_h) != self._grid)
-        if invalidated and not rebuilt and self.pool.layers:
-            # Moving to a different monitor or grid orphans the currently
-            # visible windows: forgetting which slots were active would leave
-            # them stranded at their old coordinates with nothing tracking
-            # them. Hide them first, while we still know where they are.
-            # (A rebuild is safe already -- those windows were destroyed.)
+        # Only a new grid (or a rebuilt pool) invalidates slot tracking: the
+        # trackers and the active sets live in grid units. Moving or resizing
+        # the target just changes the pixel maps -- the next frame's diff moves
+        # every window and hides the unused ones, so nothing is orphaned. Not
+        # clearing here is what lets a window be dragged live without the
+        # picture blanking on every mouse event.
+        regrid = rebuilt or (grid_w, grid_h) != self._grid
+        if regrid and not rebuilt and self.pool.layers:
+            # Hide while we still know where the old windows are.
             self.clear()
-        if invalidated:
+        if regrid:
             self._active = [set() for _ in colors]
             self._trackers = [SlotTracker(cfg_capacity(cfg))
                               for _ in colors]

@@ -1,11 +1,10 @@
-"""Reusable Tk pieces for the control panel.
+"""Reusable Tk pieces for the home window, the overlay and settings.
 
 Presentation only: nothing here imports `Player` or mutates `AppConfig`, so
-`app.py` stays readable as layout plus handlers. The three things worth
-factoring out are the dark theme (ttk needs `clam` and about forty
-`style.configure` calls before it stops looking like Windows 95), the seek
-bar's drag protocol, and slider debouncing -- each of which would otherwise
-be duplicated in a dozen places.
+`app.py` stays readable as layout plus handlers. What is worth factoring out:
+the dark theme (ttk needs `clam` and about forty `style.configure` calls
+before it stops looking like Windows 95), DPI scaling, anti-aliased rounded
+shapes (Tk's canvas cannot draw one; Pillow can), and slider debouncing.
 """
 from __future__ import annotations
 
@@ -13,6 +12,8 @@ import tkinter as tk
 from collections.abc import Callable, Sequence
 from tkinter import ttk
 from typing import Any
+
+from PIL import Image, ImageDraw
 
 from ..core import palette
 
@@ -41,6 +42,27 @@ UI_STOP = ("Segoe UI", 12, "bold")
 UI_CAP = ("Segoe UI", 7, "bold")
 MONO = ("Consolas", 9)
 
+# Pixel sizes below are logical: `px()` scales them by the display DPI, which
+# `apply_theme` reads from Tk. Fonts are in points and scale on their own, so
+# without this a 200%-scaled display gets doubled text in un-doubled boxes --
+# which is exactly how the old panel ended up cramped and clipped.
+SCALE = 1.0
+
+
+def px(n: float) -> int:
+    return int(round(n * SCALE))
+
+
+def rounded_image(width: int, height: int, radius: float, fill: str, bg: str,
+                  outline: str | None = None, supersample: int = 3) -> Image.Image:
+    """An anti-aliased rounded rectangle on a solid background colour."""
+    ss = supersample
+    img = Image.new("RGB", (max(1, width) * ss, max(1, height) * ss), bg)
+    ImageDraw.Draw(img).rounded_rectangle(
+        [0, 0, img.width - 1, img.height - 1], radius=radius * ss, fill=fill,
+        outline=outline, width=ss if outline else 0)
+    return img.resize((max(1, width), max(1, height)), Image.LANCZOS)
+
 
 def apply_theme(root: tk.Misc) -> ttk.Style:
     """Dark ttk theme. Returns the Style so callers can extend it.
@@ -48,6 +70,11 @@ def apply_theme(root: tk.Misc) -> ttk.Style:
     Only `clam` exposes its element colours to `configure`; the stock Windows
     themes draw through the native renderer and silently ignore background.
     """
+    global SCALE
+    try:
+        SCALE = max(1.0, float(root.tk.call("tk", "scaling")) * 72 / 96)
+    except tk.TclError:
+        SCALE = 1.0
     style = ttk.Style(root)
     try:
         style.theme_use("clam")
@@ -85,7 +112,7 @@ def apply_theme(root: tk.Misc) -> ttk.Style:
                     font=("Consolas", 11))
 
     style.configure("TButton", background=c["raised"], foreground=c["fg"],
-                    bordercolor=c["line"], focusthickness=0, padding=(10, 5),
+                    bordercolor=c["line"], focusthickness=0, padding=(px(12), px(6)),
                     relief="flat")
     style.map("TButton",
               background=[("pressed", c["accent_dim"]), ("active", c["hover"]),
@@ -96,10 +123,10 @@ def apply_theme(root: tk.Misc) -> ttk.Style:
     style.map("Accent.TButton", background=[("active", c["accent"]),
                                             ("pressed", c["accent_dim"])])
     style.configure("Stop.TButton", background=c["danger_dim"],
-                    foreground="#ffe9ea", font=UI_STOP, padding=(18, 9))
+                    foreground="#ffe9ea", font=UI_STOP, padding=(px(18), px(9)))
     style.map("Stop.TButton", background=[("active", c["danger"]),
                                           ("pressed", c["danger_dim"])])
-    style.configure("Transport.TButton", padding=(12, 6), font=UI_BOLD)
+    style.configure("Transport.TButton", padding=(px(12), px(6)), font=UI_BOLD)
 
     style.configure("TCheckbutton", background=c["bg"], foreground=c["fg"],
                     indicatorcolor=c["field"], focusthickness=0)
@@ -109,7 +136,7 @@ def apply_theme(root: tk.Misc) -> ttk.Style:
                               ("disabled", c["panel"])],
               foreground=[("disabled", c["muted"])])
 
-    style.configure("TCombobox", arrowcolor=c["fg"], padding=3)
+    style.configure("TCombobox", arrowcolor=c["fg"], padding=px(3))
     style.map("TCombobox",
               fieldbackground=[("readonly", c["field"]), ("disabled", c["panel"])],
               background=[("readonly", c["raised"])],
@@ -130,9 +157,9 @@ def apply_theme(root: tk.Misc) -> ttk.Style:
                     lightcolor=c["accent"], darkcolor=c["accent_dim"])
 
     style.configure("TNotebook", background=c["bg"], bordercolor=c["line"],
-                    tabmargins=(4, 4, 4, 0))
+                    tabmargins=(px(4), px(4), px(4), 0))
     style.configure("TNotebook.Tab", background=c["panel"], foreground=c["muted"],
-                    padding=(14, 6), bordercolor=c["line"])
+                    padding=(px(16), px(7)), bordercolor=c["line"])
     style.map("TNotebook.Tab",
               background=[("selected", c["raised"]), ("active", c["hover"])],
               foreground=[("selected", c["fg"])])
@@ -143,7 +170,7 @@ def apply_theme(root: tk.Misc) -> ttk.Style:
                     foreground=c["accent"], font=UI_BOLD)
 
     style.configure("Treeview", background=c["field"], fieldbackground=c["field"],
-                    foreground=c["fg"], bordercolor=c["line"], rowheight=20)
+                    foreground=c["fg"], bordercolor=c["line"], rowheight=px(22))
     style.configure("Treeview.Heading", background=c["raised"],
                     foreground=c["muted"], relief="flat", font=UI_BOLD)
     style.map("Treeview.Heading", background=[("active", c["hover"])])
@@ -249,11 +276,11 @@ class FormGrid(ttk.Frame):
 
     def add(self, label: str, widget: tk.Widget, hint: str = "") -> tk.Widget:
         ttk.Label(self, text=label, style="Field.TLabel").grid(
-            row=self._row, column=0, sticky="w", padx=(0, 12), pady=3)
-        widget.grid(row=self._row, column=1, sticky="w", pady=3)
+            row=self._row, column=0, sticky="w", padx=(0, px(14)), pady=px(4))
+        widget.grid(row=self._row, column=1, sticky="w", pady=px(4))
         if hint:
             ttk.Label(self, text=hint, style="Hint.TLabel").grid(
-                row=self._row, column=2, sticky="w", padx=(12, 0))
+                row=self._row, column=2, sticky="w", padx=(px(12), 0))
         self._row += 1
         return widget
 
@@ -263,7 +290,7 @@ class FormGrid(ttk.Frame):
         return widget
 
     def heading(self, text: str) -> None:
-        pad = (2, 4) if self._row == 0 else (12, 4)
+        pad = (px(2), px(4)) if self._row == 0 else (px(14), px(4))
         ttk.Label(self, text=text.upper(), style="Cap.TLabel",
                   background=COLORS["bg"]).grid(
             row=self._row, column=0, columnspan=3, sticky="w", pady=pad)
@@ -294,12 +321,12 @@ class LabeledSlider(ttk.Frame):
 
         self._var = tk.DoubleVar(self, self._value)
         self.scale = ttk.Scale(self, from_=lo, to=hi, orient="horizontal",
-                               variable=self._var, length=length,
+                               variable=self._var, length=px(length),
                                command=self._on_scale)
         self.readout = ttk.Label(self, style="Value.TLabel", width=8, anchor="e",
                                  text=self._text())
         self.scale.pack(side="left")
-        self.readout.pack(side="left", padx=(8, 0))
+        self.readout.pack(side="left", padx=(px(8), 0))
         self.readout.bind("<Double-Button-1>", self._on_reset)
 
     # -- api
@@ -389,120 +416,13 @@ class MappedCombo(ttk.Combobox):
             self._command(self.value())
 
 
-class SeekBar(ttk.Frame):
-    """Canvas scrubber with an honest drag protocol.
-
-    A `ttk.Scale` fights the user: the 200 ms position feed calls `set` and
-    snaps the thumb out from under the pointer. Here the feed is dropped for
-    as long as a drag is live, and exactly one seek is issued, on release.
-    """
-
-    def __init__(self, master: tk.Misc, *,
-                 on_scrub_start: Callable[[], None] | None = None,
-                 on_scrub: Callable[[float], None] | None = None,
-                 on_seek: Callable[[float], None] | None = None,
-                 height: int = 26) -> None:
-        super().__init__(master, style="TL.TFrame")
-        self._on_scrub_start = on_scrub_start
-        self._on_scrub = on_scrub
-        self._on_seek = on_seek
-        self._fraction = 0.0
-        self._dragging = False
-        self._enabled = True
-        self._pad = 9
-
-        self.canvas = tk.Canvas(self, height=height, bd=0, highlightthickness=0,
-                                bg=COLORS["bg"], cursor="hand2")
-        self.canvas.pack(fill="x", expand=True)
-        self.canvas.bind("<Configure>", lambda _e: self._redraw())
-        self.canvas.bind("<Button-1>", self._press)
-        self.canvas.bind("<B1-Motion>", self._motion)
-        self.canvas.bind("<ButtonRelease-1>", self._release)
-
-    # -- api
-    @property
-    def dragging(self) -> bool:
-        return self._dragging
-
-    def fraction(self) -> float:
-        return self._fraction
-
-    def set_fraction(self, fraction: float) -> None:
-        """Position feed. Ignored mid-drag; the user owns the thumb then."""
-        if self._dragging:
-            return
-        value = 0.0 if fraction != fraction else max(0.0, min(1.0, float(fraction)))
-        if abs(value - self._fraction) < 1e-4:
-            return
-        self._fraction = value
-        self._redraw()
-
-    def enable(self, on: bool) -> None:
-        self._enabled = bool(on)
-        self.canvas.configure(cursor="hand2" if on else "arrow")
-        self._redraw()
-
-    # -- events
-    def _fraction_at(self, x: float) -> float:
-        width = max(1, self.canvas.winfo_width() - 2 * self._pad)
-        return max(0.0, min(1.0, (float(x) - self._pad) / width))
-
-    def _press(self, event: tk.Event) -> None:
-        if not self._enabled:
-            return
-        self._dragging = True
-        self._fraction = self._fraction_at(event.x)
-        self._redraw()
-        if self._on_scrub_start:
-            self._on_scrub_start()
-        if self._on_scrub:
-            self._on_scrub(self._fraction)
-
-    def _motion(self, event: tk.Event) -> None:
-        if not self._dragging:
-            return
-        self._fraction = self._fraction_at(event.x)
-        self._redraw()
-        if self._on_scrub:
-            self._on_scrub(self._fraction)
-
-    def _release(self, event: tk.Event) -> None:
-        if not self._dragging:
-            return
-        self._fraction = self._fraction_at(event.x)
-        self._dragging = False
-        self._redraw()
-        if self._on_seek:
-            self._on_seek(self._fraction)
-
-    def _redraw(self) -> None:
-        c = self.canvas
-        c.delete("all")
-        width = c.winfo_width() or int(c["width"] or 300)
-        height = c.winfo_height() or int(c["height"] or 26)
-        pad, mid = self._pad, height / 2
-        track_top, track_bottom = mid - 3, mid + 3
-        played = pad + (width - 2 * pad) * self._fraction
-        fill = COLORS["accent"] if self._enabled else COLORS["muted"]
-
-        c.create_rectangle(pad, track_top, width - pad, track_bottom,
-                           fill=COLORS["field"], outline=COLORS["line"])
-        if played > pad:
-            c.create_rectangle(pad, track_top, played, track_bottom,
-                               fill=fill, outline=fill)
-        radius = 8 if self._dragging else 6
-        c.create_oval(played - radius, mid - radius, played + radius, mid + radius,
-                      fill=COLORS["fg"] if self._dragging else fill,
-                      outline=COLORS["bg"], width=2)
-
-
 class SwatchStrip(ttk.Frame):
     """The actual COLORREFs the window pool will paint, at the current levels."""
 
     def __init__(self, master: tk.Misc, width: int = 190, height: int = 18) -> None:
         super().__init__(master, style="TL.TFrame")
-        self._width = width
-        self.canvas = tk.Canvas(self, width=width, height=height, bd=0,
+        self._width = width = px(width)
+        self.canvas = tk.Canvas(self, width=width, height=px(height), bd=0,
                                 highlightthickness=1,
                                 highlightbackground=COLORS["line"],
                                 bg="#000000")
@@ -536,12 +456,12 @@ class StatReadout(ttk.Frame):
         self._labels: dict[str, ttk.Label] = {}
         for key, caption, width in fields:
             cell = ttk.Frame(self, style="Card.TFrame")
-            cell.pack(side="left", padx=(0, 5))
+            cell.pack(side="left", padx=(0, px(5)))
             ttk.Label(cell, text=caption.upper(), style="Cap.TLabel").pack(
-                anchor="w", padx=7, pady=(3, 0))
+                anchor="w", padx=px(7), pady=(px(3), 0))
             value = ttk.Label(cell, text="-", style="Stat.TLabel", width=width,
                               anchor="w")
-            value.pack(anchor="w", padx=7, pady=(0, 3))
+            value.pack(anchor="w", padx=px(7), pady=(0, px(3)))
             self._labels[key] = value
 
     def update_values(self, values: dict[str, str]) -> None:
@@ -606,3 +526,33 @@ class ScrollFrame(ttk.Frame):
     def _wheel(self, event: tk.Event) -> None:
         if self._vsb.winfo_ismapped():
             self._canvas.yview_scroll(int(-event.delta / 120), "units")
+
+
+class PillButton(tk.Label):
+    """A rounded, anti-aliased button with a hover state.
+
+    ttk buttons are rectangles; a Label carrying a Pillow-rendered pill with
+    the caption composited on top is the cheapest way to a modern button.
+    """
+
+    def __init__(self, master: tk.Misc, text: str, command: Callable[[], None],
+                 *, width: int, height: int, fill: str, hover: str,
+                 fg: str = "#ffffff", bg: str | None = None,
+                 font: Any = ("Segoe UI Semibold", 11)) -> None:
+        from PIL import ImageTk
+        bg = bg or COLORS["bg"]
+        w_, h = px(width), px(height)
+        self._normal = ImageTk.PhotoImage(rounded_image(w_, h, h / 2, fill, bg),
+                                          master=master)
+        self._hover = ImageTk.PhotoImage(rounded_image(w_, h, h / 2, hover, bg),
+                                         master=master)
+        super().__init__(master, image=self._normal, text=text, compound="center",
+                         fg=fg, bg=bg, font=font, bd=0, cursor="hand2")
+        self._command = command
+        self.bind("<Enter>", lambda _e: self.configure(image=self._hover))
+        self.bind("<Leave>", lambda _e: self.configure(image=self._normal))
+        self.bind("<ButtonRelease-1>", self._release)
+
+    def _release(self, event: tk.Event) -> None:
+        if 0 <= event.x < self.winfo_width() and 0 <= event.y < self.winfo_height():
+            self._command()

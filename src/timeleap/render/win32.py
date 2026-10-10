@@ -28,6 +28,10 @@ WS_EX_TOPMOST = 0x00000008
 WS_EX_TRANSPARENT = 0x00000020
 WS_EX_TOOLWINDOW = 0x00000080
 WS_EX_NOACTIVATE = 0x08000000
+WS_EX_LAYERED = 0x00080000
+WS_EX_APPWINDOW = 0x00040000
+LWA_ALPHA = 0x00000002
+GWL_EXSTYLE = -20
 
 SWP_NOSIZE = 0x0001
 SWP_NOMOVE = 0x0002
@@ -177,6 +181,15 @@ if IS_WINDOWS:
     GetCurrentThreadId = _bind(kernel32.GetCurrentThreadId, [], wintypes.DWORD)
     timeBeginPeriod = _bind(winmm.timeBeginPeriod, [wintypes.UINT], wintypes.UINT)
     timeEndPeriod = _bind(winmm.timeEndPeriod, [wintypes.UINT], wintypes.UINT)
+    SetLayeredWindowAttributes = _bind(
+        user32.SetLayeredWindowAttributes,
+        [wintypes.HWND, wintypes.COLORREF, ctypes.c_ubyte, wintypes.DWORD],
+        wintypes.BOOL)
+    GetWindowLongPtrW = _bind(user32.GetWindowLongPtrW,
+                              [wintypes.HWND, ctypes.c_int], ctypes.c_ssize_t)
+    SetWindowLongPtrW = _bind(user32.SetWindowLongPtrW,
+                              [wintypes.HWND, ctypes.c_int, ctypes.c_ssize_t],
+                              ctypes.c_ssize_t)
 
     HWND_TOPMOST = wintypes.HWND(-1)
     HWND_NOTOPMOST = wintypes.HWND(-2)
@@ -323,3 +336,57 @@ def pump_messages(limit: int = 64) -> None:
             return
         TranslateMessage(ctypes.byref(msg))
         DispatchMessageW(ctypes.byref(msg))
+
+
+def make_layered(hwnd: int) -> None:
+    """Give a WS_EX_LAYERED window its (opaque) layer.
+
+    WS_EX_TRANSPARENT only takes a top-level window out of hit-testing when it
+    is also layered -- on its own a pixel window still swallows every click
+    over it. A layered window is invisible until this is called, and at alpha
+    255 it renders exactly as before (measured: same throughput, same pixels).
+    """
+    if IS_WINDOWS and hwnd:
+        SetLayeredWindowAttributes(hwnd, 0, 255, LWA_ALPHA)
+
+
+def dark_title_bar(hwnd: int) -> None:
+    """Ask DWM for a dark caption (Windows 10 20H1+). Silently a no-op elsewhere."""
+    if not IS_WINDOWS or not hwnd:
+        return
+    try:
+        dwm = ctypes.WinDLL("dwmapi")
+        on = ctypes.c_int(1)
+        for attr in (20, 19):           # 19 was the pre-20H1 number
+            if dwm.DwmSetWindowAttribute(wintypes.HWND(hwnd), attr,
+                                         ctypes.byref(on), 4) == 0:
+                break
+        # Windows 10 only repaints the caption on a frame change; without
+        # this the attribute is stored but the bar stays light until resized.
+        SetWindowPos(hwnd, None, 0, 0, 0, 0, 0x0020 | SWP_NOMOVE | SWP_NOSIZE
+                     | SWP_NOZORDER | SWP_NOACTIVATE)
+    except Exception:
+        pass
+
+
+def show_in_taskbar(hwnd: int) -> None:
+    """Turn a borderless Tk toplevel into a real app window.
+
+    Tk makes overrideredirect windows tool windows, which have no taskbar
+    button and no Alt-Tab entry -- the player would vanish the moment another
+    window covered it. Call while the window is withdrawn; the style is read
+    when it is next shown.
+    """
+    if not IS_WINDOWS or not hwnd:
+        return
+    ex = GetWindowLongPtrW(hwnd, GWL_EXSTYLE)
+    SetWindowLongPtrW(hwnd, GWL_EXSTYLE, (ex | WS_EX_APPWINDOW) & ~WS_EX_TOOLWINDOW)
+
+
+def monitor_at(x: int, y: int) -> Monitor:
+    """The monitor containing a point, else the nearest one."""
+    mons = monitors()
+    for m in mons:
+        if m.x <= x < m.x + m.width and m.y <= y < m.y + m.height:
+            return m
+    return min(mons, key=lambda m: abs(m.x + m.width / 2 - x) + abs(m.y + m.height / 2 - y))

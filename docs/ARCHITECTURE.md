@@ -60,7 +60,8 @@ src/timeleap/
     format.py        .tlp container read/write (indexed, seekable)
     store.py         content-addressed bake cache
   ui/
-    app.py           Tk control panel (thread-safe marshalling)
+    app.py           home window, settings, transport (thread-safe marshalling)
+    overlay.py       the player window: hover controls, drag/resize, fullscreen
     widgets.py       seek bar, sliders, stat readout, theming
     preview.py       live source preview (Pillow)
     hotkeys.py       global panic hotkey via RegisterHotKey
@@ -224,7 +225,7 @@ Tabs: **Playback** (open/play/pause/stop/seek bar/speed/loop/reverse),
 algorithm, monitor picker), **Effects** (the `EffectConfig` set),
 **Audio** (mute, volume, backend), **About/Stats**.
 Must show live stats: render fps, boxes/frame, dropped frames, buffer depth.
-A big always-reachable **STOP** and the panic hotkey are mandatory — 200
+A close button on the player and the panic hotkey are mandatory — 200
 top-most windows can otherwise cover every way to quit.
 
 ### `ui/hotkeys.py`

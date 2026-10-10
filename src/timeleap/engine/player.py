@@ -188,9 +188,15 @@ class Player:
         with self._lock:
             self._intent.seek = float(self._stats.frame)
 
-    def refresh_render(self) -> None:
-        """Apply RenderConfig / palette / effect changes without reloading."""
-        self._effects = EffectStack(self.cfg.effects)
+    def refresh_render(self, effects: bool = True) -> None:
+        """Apply RenderConfig / palette / effect changes without reloading.
+
+        `effects=False` is for pure geometry changes -- a window being dragged
+        fires this per mouse event, and rebuilding the effect stack each time
+        would wipe trails and echo history mid-drag.
+        """
+        if effects:
+            self._effects = EffectStack(self.cfg.effects)
         with self._lock:
             self._intent.reconfigure_render = True
 
@@ -341,9 +347,12 @@ class Player:
             except Exception:
                 pass
         if intent.reconfigure_render:
+            # Redraw the current picture under the new settings rather than
+            # clearing: a paused video must follow a window drag or a palette
+            # change instead of vanishing until the next frame is played.
             self._configure_renderer(renderer)
-            renderer.clear()
-            self._last_boxes = boxgen.EMPTY
+            if self._last_boxes.shape[0]:
+                self._last_stats = renderer.render(self._last_boxes)
         if intent.restart_source:
             at = self._stats.frame
             if self._source is not None:

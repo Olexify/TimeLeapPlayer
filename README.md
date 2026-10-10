@@ -59,7 +59,7 @@ TimeLeapPlayer.bat
 
 Double-click it, or point a desktop shortcut at it. It checks the environment,
 hands off to `pythonw.exe` and exits, so no console window sits behind the
-control panel. Given arguments it stays on the console instead, so
+player. Given arguments it stays on the console instead, so
 `TimeLeapPlayer.bat info clip.mp4` still prints its output.
 
 `run.bat` does the same thing but keeps the console attached for the whole
@@ -78,67 +78,59 @@ python -m timeleap gui
 
 ## Usage
 
-### The GUI
+### The player window
 
-A Tk control panel. **STOP** and **Panic** buttons sit in the header, a preset
-picker next to the file controls, and a live stat strip runs along the bottom:
-render fps, decode fps, boxes, windows, dropped, buffer, drift, batch ms and
-which source the frames are coming from.
+Open a video and it plays in a window-sized region of your desktop — no
+frame, just the pixels. **Hover over it** and the controls fade in, like any
+media player; leave it alone for a couple of seconds and they fade out.
 
-| Tab | Contains |
+| On the video | Does |
 |---|---|
-| **Playback** | Open, next in folder, preset picker, seek bar, play/pause, speed, loop mode, reverse |
-| **Visual** | Grid width/height (or follow source aspect), max windows, levels, algorithm, threshold mode and fixed level, invert, denoise, gamma, contrast, brightness — and on the right: palette with swatches, monitor, placement (drag on screen, exact X/Y/W/H, half-screen snaps), fit, gap, min window px, redraw mode, black backdrop, click-through, always on top, frame diffing, stable slots |
-| **Effects** | Trails, echo offset, ghost, slit-scan, jitter, strobe, shuffle, time warp, warp period |
-| **Audio** | Mute, volume, backend, A/V sync, max frame skip, prefetch depth |
-| **Cache** | Bake this video with a progress bar, prune, open the cache folder, and a browsable list of every bake with size and date |
-| **About** | What it is, the hotkey list, and where your config file lives |
+| Hover | Show the controls: title, settings, fullscreen, close, and a play bar with seek, time and volume |
+| Drag | Move the window |
+| Drag an edge or corner | Resize it (the aspect ratio stays locked) |
+| Click | Play / pause |
+| Double-click | Fullscreen, and back |
+| Wheel | Volume |
+| Right-click | Quick menu: open, recent, style, palette, speed, loop, backdrop, always on top, settings |
 
-Visual and effect changes apply **live**, without reloading the video.
+Hover over the seek bar to see the time under the pointer; drag it to scrub
+and the picture follows. Volume, speed and style changes show a short
+on-screen message. In fullscreen the pointer hides when idle. The player has
+a taskbar button and an Alt-Tab entry, and its position and size are
+remembered between sessions.
 
-There is also a **preview** window showing the two stages you are actually
-tuning side by side: the grey grid left after downscaling, and the rectangles
-that survived thresholding, the level split and the window budget. That answers
-"is this the threshold, the grid, or the box budget?" without having to read it
-off two hundred windows on the real desktop.
+With nothing playing you get the **home window**: an *Open video* button and
+your recent files. **Settings** (the gear on the video or on the home window)
+holds everything else, split into *Picture*, *Playback*, *Effects*,
+*Advanced*, *Cache* and *About*; changes apply **live** without reloading.
 
 | Key | Action |
 |---|---|
-| `Space` | Play / pause |
-| `Ctrl+O` | Open a file |
-| `Ctrl+N` | Next file in the folder |
-| `Esc` | Stop and clear the screen |
-| `F5` | Restart from the beginning |
+| `Space` / `K` | Play / pause |
 | `Left` / `Right` | Seek 5 seconds |
-| `Ctrl+M` | Move / resize the picture on screen |
-| **`Ctrl+Alt+Q`** | **PANIC — global**, works when the panel is buried |
+| `Up` / `Down` | Volume |
+| `F` / `Esc` | Fullscreen / leave fullscreen |
+| `M` | Mute |
+| `Ctrl+O` / `Ctrl+N` | Open a file / next file in the folder |
+| **`Ctrl+Alt+Q`** | **PANIC — global**, hides everything and stops playback |
 | `Ctrl+Alt+Space` | Play / pause — global |
 | `Ctrl+Alt+Right` | Next file — global |
 
 The last three are registered system-wide on their own message thread, so they
-work even when a few hundred top-most windows have covered every other route
-out. That is also why the STOP button is always visible rather than living in a
-tab.
+work even when the player is buried or the app is unresponsive.
 
-### Moving the picture
+### Click-through
 
-The pixel windows are click-through, so you cannot grab the video with the
-mouse — that is what keeps the desktop usable while it plays. Placement is
-handled explicitly instead, on the **Visual** tab:
+The pixel windows themselves are click-through: they are layered
+(`WS_EX_LAYERED | WS_EX_TRANSPARENT`), so clicks pass straight through them.
+An earlier build set `WS_EX_TRANSPARENT` alone, which Windows ignores for
+hit-testing on a non-layered top-level window — a real click over a white box
+was swallowed. The player window's own input comes from an invisible 1%-alpha
+surface laid over the picture, which is what makes drag, click and hover work.
 
-* **Move / resize on screen…** (or `Ctrl+M`) drops a translucent handle over
-  the video. Drag inside it to move, drag an edge or corner to resize, arrow
-  keys nudge by a pixel and `Shift`+arrows by ten. The region applies *live*,
-  so the video moves under the cursor; `Enter` keeps it, `Esc` puts it back.
-* **X / Y / W / H** boxes for exact pixels, if you know the numbers.
-* **Centre / Fill / Left ½ / Right ½ / Top ½ / Bottom ½** snap to the monitor
-  currently selected in the Monitor picker.
-* **Clear** drops the region and hands control back to the Monitor picker.
-
-A region is in virtual-desktop coordinates, so negative values are fine on a
-multi-monitor setup where a screen sits left of or above the primary. From the
-command line the same thing is `--region X,Y,W,H`, and the position is saved
-with the rest of your settings.
+From the command line, `--region X,Y,W,H` places the window; coordinates are
+virtual-desktop pixels, so negative values work on multi-monitor setups.
 
 <img width="2021" height="1196" alt="image" src="https://github.com/user-attachments/assets/2c1f96a7-7e78-4efa-8d3e-6f1baa479790" />
 
@@ -160,7 +152,7 @@ timeleap cache --prune 500M           trim the bake cache
 | `bake VIDEO` | Pre-compute box geometry into a `.tlp` file |
 | `info VIDEO` | Probe a video and predict what it costs to play |
 | `cache` | Inspect or trim the bake cache |
-| `gui [VIDEO]` | Launch the control panel, optionally pre-loading a file |
+| `gui [VIDEO]` | Launch the app, optionally pre-loading a file |
 
 Global options: `--version`, `--list-monitors`, `--list-palettes`.
 
@@ -239,7 +231,7 @@ desktop, not Python.
 | **Effects** | Trails, echo + ghost blend, slit-scan, jitter, strobe, shuffle, sinusoidal time warp — all deterministic and clipped to the grid |
 | **Cache** | Indexed `.tlp` bake format with O(1) random access, content-addressed and verified, LRU pruned |
 | **Presets** | Bad Apple (classic), High detail, Greyscale bands, Matrix, Performance, Time leap |
-| **Safety** | Global panic hotkey, always-reachable STOP, click-through windows, no console flashes |
+| **Safety** | Global panic hotkey, close button on the player, truly click-through pixel windows, no console flashes |
 
 The full annotated list is in [docs/FEATURES.md](docs/FEATURES.md); the module
 contracts are in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
@@ -418,7 +410,7 @@ are dialling settings in.
 
 ## Troubleshooting
 
-**No windows appear at all — only the control panel.**
+**No windows appear at all — only the home window.**
 Check the stats readout. If `boxes` is 0, the mask is empty: the frame is too
 uniform for the current threshold, or `invert` is backwards for this footage.
 Try `invert`, or switch `threshold_mode` to `fixed` and move the threshold. If
@@ -472,7 +464,7 @@ src/timeleap/
   render/       typed ctypes bindings, window pool, DeferWindowPos renderer
   engine/       frame clock and A/V sync, decode pipeline, player transport
   cache/        .tlp bake container and content-addressed store
-  ui/           Tk control panel, widgets, preview, global hotkeys
+  ui/           home window, player overlay, settings, widgets, global hotkeys
   cli.py        command line entry point
 tests/          unit tests (pytest)
 docs/           ARCHITECTURE.md, FEATURES.md
